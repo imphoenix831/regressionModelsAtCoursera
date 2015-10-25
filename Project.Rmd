@@ -1,0 +1,111 @@
+---
+title: 'Motor Trends : Automatic or Manual transmission?'
+author: "Yao-Jen Kuo"
+date: "Sunday, October 25, 2015"
+output:
+  pdf_document:
+    toc: false
+    number_sections: true
+    highlight: tango
+---
+
+# Executive Summary
+
+You work for *Motor Trend*, a magazine about the automobile industry. Looking at a data set of a collection of cars, they are interested in exploring the relationship between a set of variables and miles per gallon (MPG) (outcome). They are particularly interested in the following two questions:
+
+* Is an automatic or manual transmission better for MPG?
+* Quantify the MPG difference between automatic and manual transmissions
+
+In short, the purpose of this analysis is to find if there is any relationship between a set of variables and MPG.
+
+# Data Management
+
+Factor some numeric variables at the beginning.
+
+```{r}
+data(mtcars)
+mtcars$cyl <- factor(mtcars$cyl)
+mtcars$vs <- factor(mtcars$vs)
+mtcars$am <- factor(mtcars$am)
+mtcars$gear <- factor(mtcars$gear)
+mtcars$carb <- factor(mtcars$carb)
+```
+
+# Exploratory Analysis
+
+In *Figure 1* the boxplot suggests a significant difference on fuel consumption between automatic and manual transmission cars. So can we use only transmission type to predict MPG as an univariate linear model?
+
+```{r}
+fitUnivariate <- lm(mpg ~ am, data=mtcars)
+round(summary(fitUnivariate)$r.squared*100, digits=2)
+```
+
+The model explains only **35.98%** of the MPG variation. In *Figure 2* the pairs graph shows that several variables have high correlation with MPG.
+
+# Regression Analysis
+
+Therefore, let us build an initial model using all variables and then using stepwise selection for the best predictors.
+
+```{r}
+fitMultivariate <- lm(mpg ~ ., data=mtcars)
+fitStepwise <- step(fitMultivariate, direction="both", trace=0)
+round(summary(fitStepwise)$r.squared*100, digits=2)#R-squared
+summary(fitStepwise)$coef[6,"Pr(>|t|)"]#alpha
+```
+
+The final model contains 4 predictors including cyl(number of cylinders), hp(horsepower), weight(weight) and am(transmission type). This model explains **86.59%** of the MPG variation. The transmission has no effect on the fuel consumption since **$\alpha$=0.2064597>0.05**.
+
+## Residual Analysis and Diagnostics
+
+According to *Figure 3* we can verify the following underlying assumptions:
+
+1. The Residuals vs Fitted plot shows no consistent pattern.
+2. The Normal Q-Q plot indicates that the residuals are normally.
+3. The Scale-Location plot confirms the constant variance assumption.
+4. The Residuals vs Leverage confirms that no outliers are present.
+
+# Conclusion
+
+```{r}
+c(abs(fitStepwise$coef[2]), abs(fitStepwise$coef[3]), 
+  abs(fitStepwise$coef[4]), abs(fitStepwise$coef[5]))
+```
+
+1. If a car has 6 or 8 cylinders, everything else same, the MPG decreases by **3.031344** and **2.163675**, respectively.
+2. One unit of increase on gross horsepower, everything else same, results a decrease of **0.03210943** on MPG.
+3. 1,000 lb increase on the weight of a car, everything else same, results a decrease of **2.496829** on MPG.
+4. This analysis was not able to find significant link between the transmission type and fuel consumption. It is less likely that driving a manual car will save you any money on gasoline.
+
+# Appendix
+
+## Figure 1
+
+Boxplot of MPG vs. Transmission
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+library(ggplot2)
+```
+
+```{r, fig.height=3}
+ggplot(mtcars, aes(x=am, y=mpg, fill=am)) +
+  geom_boxplot() +
+  xlab("Transmission type") +
+  ylab("MPG")
+```
+
+## Figure 2
+
+Pairs Graph of `mtcars`
+
+```{r, fig.height=7}
+pairs(mtcars, panel=panel.smooth, main="Pair Graph of mtcars")
+```
+
+## Figure 3
+
+Residual Analysis and Diagnostics
+
+```{r, fig.height=5}
+par(mfrow = c(2,2))
+plot(fitStepwise)
+```
