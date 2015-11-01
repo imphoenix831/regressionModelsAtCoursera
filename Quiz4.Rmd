@@ -1,0 +1,135 @@
+---
+title: "Quiz4"
+author: "Yao-Jen Kuo"
+date: "Sunday, November 1, 2015"
+output:
+  html_document:
+    theme: united
+    toc: true
+    toc_depth: 2
+    highlight: tango
+    fig_width: 9
+    fig_height: 5
+    fig_caption: false
+---
+
+# Regression Models At Coursera
+
+## Quiz 4
+
+### Question 1
+
+Consider the space shuttle data `?shuttle` in the `MASS` library. Consider modeling the use of the autolander as the outcome (variable name `use`). Fit a logistic regression model with autolander (variable auto) use (labeled as "auto" 1) versus not (0) as predicted by wind sign (variable wind). Give the estimated odds ratio for autolander use comparing head winds, labeled as "head" in the variable headwind (numerator) to tail winds (denominator).
+
+```{r, message=FALSE, warning=FALSE}
+library(MASS)
+data(shuttle)
+fit <- glm(use ~ wind, family='binomial', shuttle)
+round(exp(fit$coeff)[2],3)
+```
+
+Answer  | Options
+------- | -------
+|  | 0.031 
+V  | 0.969
+|  | -0.031
+|  | 1.327
+
+### Question 2
+
+Consider the previous problem. Give the estimated odds ratio for autolander use comparing head winds (numerator) to tail winds (denominator) adjusting for wind strength from the variable magn.
+
+```{r}
+fit2 <- glm(use ~ wind + magn, family='binomial', shuttle)
+round(exp(fit2$coeff)[2],3)
+```
+
+Answer  | Options
+------- | -------
+|  | 1.00
+|  | 1.485
+V  | 0.969
+|  | 0.684
+
+### Question 3
+
+If you fit a logistic regression model to a binary variable, for example use of the autolander, then fit a logistic regression model for one minus the outcome (not using the autolander) what happens to the coefficients?
+
+```{r, message=FALSE, warning=FALSE}
+fit1 <- glm(use ~ wind + magn, data = shuttle, family=binomial)
+shuttle2 <- shuttle
+shuttle2$use <- relevel(shuttle2$use,"noauto")
+fit2 <- glm(use ~ wind + magn, data = shuttle2, family=binomial)
+fit1$coeff
+fit2$coeff
+```
+
+Answer  | Options
+------- | -------
+V  | The coefficients reverse their signs.
+|  | The intercept changes sign, but the other coefficients don't.
+|  | The coefficients get inverted (one over their previous value).
+|  | The coefficients change in a non-linear fashion.
+
+### Question 4
+
+Consider the insect spray data `InsectSprays`. Fit a Poisson model using spray as a factor level. Report the estimated relative rate comapring spray A (numerator) to spray B (denominator).
+
+```{r, message=FALSE, warning=FALSE}
+data(InsectSprays)
+fit <- glm(count ~ spray, data=InsectSprays, family=poisson)
+round(exp(fit$coefficients[1])/exp(fit$coefficients[1]+fit$coefficients[2]), 4)
+```
+
+Answer  | Options
+------- | -------
+V  | 0.9457
+|  | -0.056
+|  | 0.136
+|  | 0.321
+
+### Question 5
+
+Consider a Poisson glm with an offset, $t$. So, for example, a model of the form `glm(count ~ x + offset(t), family = poisson)` where `x` is a factor variable comparing a treatment (1) to a control (0) and `t` is the natural log of a monitoring time. What is impact of the coefficient for `x` if we fit the model `glm(count ~ x + offset(t2), family = poisson)` where `t2 <- log(10) + t`? In other words, what happens to the coefficients if we change the units of the offset variable. (Note, adding log(10) on the log scale is multiplying by 10 on the original scale.)
+
+```{r, message=FALSE, warning=FALSE}
+InsectSprays$t <- seq(1:nrow(InsectSprays))
+InsectSprays$t2 <- log(10) + InsectSprays$t
+fit <- glm(count ~ spray + offset(t), data=InsectSprays, family=poisson)
+fitT <- glm(count ~ spray + offset(t2), data=InsectSprays, family=poisson)
+fit$coeff
+fitT$coeff
+```
+
+Answer  | Options
+------- | -------
+V  | The coefficient estimate is multiplied by 10.
+|  | The coefficient estimate is divided by 10.
+|  | The coefficient is subtracted by log(10).
+|  | The coefficient estimate is unchanged.
+
+### Question 6
+
+Consider the data
+
+```{r}
+x <- -5:5
+y <- c(5.12, 3.93, 2.67, 1.87, 0.52, 0.08, 0.93, 2.05, 2.54, 3.87, 4.97)
+```
+
+Using a knot point at 0, fit a linear model that looks like a hockey stick with two lines meeting at x=0. Include an intercept term, x and the knot point term. What is the estimated slope of the line after 0?
+
+```{r}
+knots <- c(0)
+splineTerms <- sapply(knots, function(knot) (x>0)*(x-knot))
+xMat <- cbind(x,splineTerms)
+fit <- lm(y ~ xMat)
+round(fit$coefficients[2]+fit$coefficients[3],3)
+```
+
+Answer  | Options
+------- | -------
+|  | -1.024
+|  | -0.183
+V  | 1.013
+|  | 2.037
